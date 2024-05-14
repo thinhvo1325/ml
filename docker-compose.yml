@@ -1,0 +1,138 @@
+version: "3.3"
+services:
+  spark-master:
+    image: cluster-apache-spark:3.0.2
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+    networks:
+      - mlnet
+  spark-worker-a:
+    image: cluster-apache-spark:3.0.2
+    ports:
+      - "9091:8080"
+      - "7000:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-a
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+    networks:
+        - mlnet
+  spark-worker-b:
+    image: cluster-apache-spark:3.0.2
+    ports:
+      - "9092:8080"
+      - "7001:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-b
+    volumes:
+        - ./apps:/opt/spark-apps
+        - ./data:/opt/spark-data
+    networks:
+      - mlnet
+
+  demo-database:
+    image: postgres:11.7-alpine
+    ports: 
+      - "5432:5432"
+    environment: 
+      - POSTGRES_PASSWORD=casa1234
+    networks:
+      - mlnet
+
+  # Redis
+  redis:
+    image: redis
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --requirepass password
+    # depends_on:
+    #   - spark-master
+    volumes:
+      - redis-data:/data
+    ports:
+     - 6379:6379
+    networks:
+     - mlnet
+
+  # Rabbitmq   
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    # depends_on:
+    #   - spark-master
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest 
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/
+      - rabbitmq-logs:/var/log/rabbitmq
+    networks:
+      - mlnet
+
+  # API    
+  ml-api:
+    image: duynguyenngoc/mmip-api:latest
+    container_name: ml-api
+    restart: unless-stopped
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8081 --reload"
+    # depends_on:
+    #   - ml-celery
+    volumes:
+      - ./ml-storages:/storages/
+      - api-logs:/logs/
+    ports:
+     - 8081:8081
+    networks:
+     - mlnet
+
+  # Celery object detection
+  ml-celery:
+    image: duynguyenngoc/mmip-celery:latest
+    container_name: ml-celery
+    restart: unless-stopped
+    command: sh -c "celery -A tasks worker --loglevel=info --concurrency=1 -E --logfile=/logs/celery.log"
+    # depends_on:
+    #   - rabbitmq
+    #   - redis
+    volumes:
+      - ./ml-storages:/storages/
+      - celery-logs:/logs/
+    networks:
+      - mlnet
+
+networks:
+  mlnet:
+
+volumes:
+  redis-data:
+  rabbitmq-data:
+  rabbitmq-logs:
+  celery-logs:
+  api-logs:

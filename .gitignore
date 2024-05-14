@@ -1,0 +1,26 @@
+# Ignore data files
+*.csv
+
+
+
+# core
+__pycache__
+api-logs
+celery-logs
+.DS_Store
+
+# Celery
+# ml-celery/app/worker/ml/models/*
+# !ml-celery/app/worker/ml/models/.gitkeep
+*weights*
+# Storage
+ml-storages/upload/*
+ml-storages/object_detection/*
+!ml-storages/upload/.gitkeep
+!ml-storages/object_detection/.gitkeep
+
+# frontend and socket
+node_modules
+
+
+
