@@ -63,69 +63,69 @@ services:
     networks:
       - mlnet
 
-  # Redis
-  redis:
-    image: redis
-    container_name: redis
-    restart: unless-stopped
-    command: redis-server --requirepass password
-    # depends_on:
-    #   - spark-master
-    volumes:
-      - redis-data:/data
-    ports:
-     - 6379:6379
-    networks:
-     - mlnet
+  # # Redis
+  # redis:
+  #   image: redis
+  #   container_name: redis
+  #   restart: unless-stopped
+  #   command: redis-server --requirepass password
+  #   # depends_on:
+  #   #   - spark-master
+  #   volumes:
+  #     - redis-data:/data
+  #   ports:
+  #    - 6379:6379
+  #   networks:
+  #    - mlnet
 
-  # Rabbitmq   
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: 'rabbitmq'
-    ports:
-        - 5672:5672
-        - 15672:15672
-    # depends_on:
-    #   - spark-master
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest 
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq/
-      - rabbitmq-logs:/var/log/rabbitmq
-    networks:
-      - mlnet
+  # # Rabbitmq   
+  # rabbitmq:
+  #   image: rabbitmq:3-management-alpine
+  #   container_name: 'rabbitmq'
+  #   ports:
+  #       - 5672:5672
+  #       - 15672:15672
+  #   # depends_on:
+  #   #   - spark-master
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=guest 
+  #     - RABBITMQ_DEFAULT_PASS=guest
+  #   volumes:
+  #     - rabbitmq-data:/var/lib/rabbitmq/
+  #     - rabbitmq-logs:/var/log/rabbitmq
+  #   networks:
+  #     - mlnet
 
-  # API    
-  ml-api:
-    image: duynguyenngoc/mmip-api:latest
-    container_name: ml-api
-    restart: unless-stopped
-    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8081 --reload"
-    # depends_on:
-    #   - ml-celery
-    volumes:
-      - ./ml-storages:/storages/
-      - api-logs:/logs/
-    ports:
-     - 8081:8081
-    networks:
-     - mlnet
+  # # API    
+  # ml-api:
+  #   image: duynguyenngoc/mmip-api:latest
+  #   container_name: ml-api
+  #   restart: unless-stopped
+  #   command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8081 --reload"
+  #   # depends_on:
+  #   #   - ml-celery
+  #   volumes:
+  #     - ./ml-storages:/storages/
+  #     - api-logs:/logs/
+  #   ports:
+  #    - 8081:8081
+  #   networks:
+  #    - mlnet
 
-  # Celery object detection
-  ml-celery:
-    image: duynguyenngoc/mmip-celery:latest
-    container_name: ml-celery
-    restart: unless-stopped
-    command: sh -c "celery -A tasks worker --loglevel=info --concurrency=1 -E --logfile=/logs/celery.log"
-    # depends_on:
-    #   - rabbitmq
-    #   - redis
-    volumes:
-      - ./ml-storages:/storages/
-      - celery-logs:/logs/
-    networks:
-      - mlnet
+  # # Celery object detection
+  # ml-celery:
+  #   image: duynguyenngoc/mmip-celery:latest
+  #   container_name: ml-celery
+  #   restart: unless-stopped
+  #   command: sh -c "celery -A tasks worker --loglevel=info --concurrency=1 -E --logfile=/logs/celery.log"
+  #   # depends_on:
+  #   #   - rabbitmq
+  #   #   - redis
+  #   volumes:
+  #     - ./ml-storages:/storages/
+  #     - celery-logs:/logs/
+  #   networks:
+  #     - mlnet
 
 networks:
   mlnet:
